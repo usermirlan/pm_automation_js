@@ -1,0 +1,67 @@
+import { PrismaService } from '../prisma.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Queue } from 'bullmq';
+export declare class TasksService {
+    private prisma;
+    private eventEmitter;
+    private deadlineQueue;
+    constructor(prisma: PrismaService, eventEmitter: EventEmitter2, deadlineQueue: Queue);
+    findAll(): Promise<{
+        id: string;
+        title: string;
+        status: string;
+        tags: string;
+        deadline: Date | null;
+        startedAt: Date | null;
+        finishedAt: Date | null;
+        projectId: string;
+        assigneeId: string | null;
+    }[]>;
+    findOne(id: string): Promise<{
+        id: string;
+        title: string;
+        status: string;
+        tags: string;
+        deadline: Date | null;
+        startedAt: Date | null;
+        finishedAt: Date | null;
+        projectId: string;
+        assigneeId: string | null;
+    } | null>;
+    create(data: {
+        title: string;
+        projectId: string;
+    }): Promise<{
+        id: string;
+        title: string;
+        status: string;
+        tags: string;
+        deadline: Date | null;
+        startedAt: Date | null;
+        finishedAt: Date | null;
+        projectId: string;
+        assigneeId: string | null;
+    }>;
+    update(id: string, status: string, newTitle?: string): Promise<{
+        id: string;
+        title: string;
+        status: string;
+        tags: string;
+        deadline: Date | null;
+        startedAt: Date | null;
+        finishedAt: Date | null;
+        projectId: string;
+        assigneeId: string | null;
+    }>;
+    remove(id: string): Promise<{
+        id: string;
+        title: string;
+        status: string;
+        tags: string;
+        deadline: Date | null;
+        startedAt: Date | null;
+        finishedAt: Date | null;
+        projectId: string;
+        assigneeId: string | null;
+    }>;
+}

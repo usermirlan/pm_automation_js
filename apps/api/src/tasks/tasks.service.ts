@@ -1,0 +1,97 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+
+@Injectable()
+export class TasksService {
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+    @InjectQueue('deadlines') private deadlineQueue: Queue
+  ) {}
+
+  async findAll() {
+    return this.prisma.task.findMany();
+  }
+
+  async findOne(id: string) {
+    return this.prisma.task.findUnique({ where: { id } });
+  }
+
+  async create(data: { title: string; projectId: string }) {
+    const createdTask = await this.prisma.task.create({
+      data: {
+        title: data.title,
+        projectId: data.projectId,
+        status: 'TODO',
+      },
+    });
+    this.eventEmitter.emit('task.created', createdTask);
+
+    // АВТОМАТИЗАЦИЯ: Автоматический запуск проекта
+    if (data.title.startsWith('Проект:')) {
+      const subTasks = ['Планирование', 'Разработка', 'Тестирование'];
+      for (const subTitle of subTasks) {
+        // Создаем подзадачи с задержкой для визуального эффекта
+        setTimeout(async () => {
+          await this.create({ 
+            title: `↳ ${subTitle} (${data.title.replace('Проект:', '').trim()})`, 
+            projectId: data.projectId 
+          });
+        }, 2000);
+      }
+    }
+
+    // Внутренняя автоматизация без Redis для демо
+    setTimeout(async () => {
+      const taskInDb = await this.findOne(createdTask.id);
+      if (taskInDb && taskInDb.status === 'TODO') {
+        const mathRegex = /^(\d+)\s*([\+\-\*\/])\s*(\d+)$/;
+        const match = taskInDb.title.match(mathRegex);
+
+        if (match) {
+          const num1 = parseInt(match[1]);
+          const op = match[2];
+          const num2 = parseInt(match[3]);
+          let result = 0;
+          if (op === '+') result = num1 + num2;
+          if (op === '-') result = num1 - num2;
+          if (op === '*') result = num1 * num2;
+          if (op === '/') result = num1 / num2;
+
+          await this.update(createdTask.id, 'DONE', `${taskInDb.title} = ${result}`);
+        } else {
+          await this.update(createdTask.id, 'IN_PROGRESS');
+        }
+      }
+    }, 10000);
+
+    return createdTask;
+  }
+
+  async update(id: string, status: string, newTitle?: string) {
+    const updateData: any = { status };
+    if (newTitle) updateData.title = newTitle;
+
+    if (status === 'IN_PROGRESS') {
+      updateData.startedAt = new Date();
+    } else if (status === 'DONE') {
+      updateData.finishedAt = new Date();
+    }
+
+    const task = await this.prisma.task.update({
+      where: { id },
+      data: updateData,
+    });
+    this.eventEmitter.emit('task.updated', task);
+    return task;
+  }
+
+  async remove(id: string) {
+    const task = await this.prisma.task.delete({ where: { id } });
+    this.eventEmitter.emit('task.deleted', task);
+    return task;
+  }
+}
