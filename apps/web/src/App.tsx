@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://pm-automation-js.onrender.com';
 const socket = io(API_URL);
 
 interface Task {
