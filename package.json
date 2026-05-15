@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "db:setup": "prisma generate --schema=packages/database/prisma/schema.prisma && prisma db push --schema=packages/database/prisma/schema.prisma",
+    "db:setup": "npx prisma generate --schema=packages/database/prisma/schema.prisma && npx prisma db push --schema=packages/database/prisma/schema.prisma",
     "test": "turbo run test"
   },
   "packageManager": "npm@10.8.2",
